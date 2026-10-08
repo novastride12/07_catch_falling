@@ -63,7 +63,6 @@ class GameEngine:
             ):
                 possible_positions.append(x)
 
-        # If there is no suitable position, don't spawn.
         if not possible_positions:
             return
 
@@ -87,7 +86,6 @@ class GameEngine:
         if keys_pressed[pygame.K_RIGHT]:
             self.basket.x += self.basket.speed
 
-        # Task 2:
         # Keep the entire basket inside the screen.
         half_width = self.basket.width / 2
 
@@ -97,12 +95,26 @@ class GameEngine:
         )
 
     def handle_keydown(self, key):
+        """
+        Handle keys that are pressed once rather than held.
+        """
+
+        # Restart after game over.
         if self.game_over and key == pygame.K_r:
             self.__init__()
+            return
+
+        # Task 4: activate temporary speed boost.
+        if not self.game_over and key == pygame.K_SPACE:
+            self.basket.activate_boost()
 
     def update(self):
         if self.game_over:
             return
+
+        # Task 4:
+        # Update the basket's temporary speed boost timer.
+        self.basket.update()
 
         # -----------------------------------------
         # TASK 3: CONTROLLED SPAWNING
@@ -113,8 +125,6 @@ class GameEngine:
         if self.frames_until_spawn <= 0:
             self._spawn_object()
 
-            # Instead of always waiting exactly 50 frames,
-            # choose a random interval between 30 and 70 frames.
             self.frames_until_spawn = random.randint(
                 MIN_SPAWN_INTERVAL,
                 MAX_SPAWN_INTERVAL
@@ -133,9 +143,8 @@ class GameEngine:
 
         basket_rect = self.basket.get_rect()
 
-        # Iterate over a copy of the list.
-        # This allows us to safely remove caught objects
-        # from the original list.
+        # Iterate over a copy so removing caught objects
+        # doesn't cause other objects to be skipped.
         for obj in self.objects[:]:
             if is_caught(basket_rect, obj):
                 self.score += 1
@@ -185,6 +194,24 @@ class GameEngine:
             f"Misses: {self.misses}/{MAX_MISSES}",
             (10, 36)
         )
+
+        # Task 4: tell the player how to activate the boost.
+        renderer.draw_text(
+            surface,
+            font,
+            "SPACE: Speed Boost",
+            (10, 62)
+        )
+
+        # Task 4: show a clear indicator while boost is active.
+        if self.basket.is_boosted:
+            renderer.draw_text(
+                surface,
+                font,
+                "BOOST ACTIVE!",
+                (WIDTH - 180, 10),
+                (255, 220, 80)
+            )
 
         if self.game_over:
             renderer.draw_banner(
